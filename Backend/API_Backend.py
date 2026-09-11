@@ -9,6 +9,9 @@ from ocr_vietnamese import VietnameseOCR
 from api_processor import genai_api
 
 app = FastAPI()
+@app.get("/")
+def home():
+    return {"message": "Server FastAPI dang hoat dong!"}
 
 # Bổ sung CORS cho phép Frontend gọi API (kể cả file://)
 app.add_middleware(
