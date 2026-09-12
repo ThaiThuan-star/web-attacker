@@ -1,14 +1,13 @@
 {
-  "builds": [
+  "cleanUrls": true,
+  "rewrites": [
     {
-      "src": "Backend/API_Backend.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
+      "source": "/api/:path*",
+      "destination": "https://web-attacker-backend.onrender.com"
+    },
     {
-      "src": "/(.*)",
-      "dest": "Backend/API_Backend.py"
+      "source": "/",
+      "destination": "/index.html"
     }
   ]
 }
