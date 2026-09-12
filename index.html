@@ -881,26 +881,28 @@ Chú/cô có thể xem xét điều chỉnh thành: 'Nếu báo trước 30 ngà
                 }, 1000);
 
                 // Gọi API backend (tự động thử relative path /api/analyze-contract, rồi tới 127.0.0.1)
-                let response;
-                const apiHost = window.API_BASE_URL || "";
-                try {
-                    response = await fetch(apiHost + "/api/analyze-contract", {
-                        method: "POST",
-                        body: formData
-                    });
-                } catch (err) {
-                    response = await fetch("http://127.0.0.1:8000/api/analyze-contract", {
-                        method: "POST",
-                        body: formData
-                    });
-                }
+                const apiHost = "https://web-attacker-backend.onrender.com";
 
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => ({}));
-                    throw new Error(errData.error || `Lỗi máy chủ (${response.status})`);
-                }
+            let response;
 
-                const result = await response.json();
+            try {
+                response = await fetch(apiHost + "/api/analyze-contract", {
+                    method: "POST",
+                    body: formData
+                });
+            } catch (err) {
+                console.error("Không thể kết nối Backend:", err);
+                throw new Error("Không thể kết nối đến máy chủ.");
+            }
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(
+                    errData.error || `Lỗi máy chủ (${response.status})`
+                );
+            }
+
+            const result = await response.json();
 
                 // Hiệu ứng hoàn tất bước 3
                 step3.classList.remove('bg-sand');
