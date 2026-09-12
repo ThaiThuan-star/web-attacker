@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://web-attacker-backend.onrender.com/api/:path*"
+    }
+  ]
+}
