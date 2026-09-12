@@ -1,0 +1,10 @@
+B1: CMD:
+cd /d d:\Web_Attacker\Backend
+
+B2: python API_Backend.py
+
+B3:
+Khi thấy thông báo xuất hiện dòng:
+text
+INFO: Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+👉 Lưu ý: Bạn cần giữ nguyên cửa sổ CMD này (không tắt đi) trong suốt quá trình sử dụng web.

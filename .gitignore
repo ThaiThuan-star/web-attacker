@@ -1,0 +1,21 @@
+# Security / Environment variables
+Backend/.env
+.env
+*.env
+
+# Python cache & build
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# IDE / Editor config
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS temporary files
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="vi" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RentGuard AI — Trợ lý pháp lý cho người thuê trọ</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700;9..144,900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fraunces', 'serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
+                    },
+                    colors: {
+                        paper: '#FDFCF7',
+                        card: '#FBF9F1',
+                        ink: '#12271A',
+                        ink2: '#3E5346',
+                        brand: { 50:'#EEF6EE', 100:'#D8ECDA', 300:'#7FBE8C', 500:'#1B7A43', 600:'#166636', 700:'#124F2C', 900:'#0F2E1D' },
+                        clay: { 100:'#FBE4D6', 400:'#E8622C', 500:'#D3521F' },
+                        gold: { 100:'#FBEECB', 400:'#F0A93E', 500:'#D9901F' },
+                        sand: '#EDE7D9',
+                    },
+                    borderRadius: { '2xl': '1.1rem', '3xl': '1.5rem' },
+                }
+            }
+        }
+    </script>
+    <style>
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #F4F1E6; }
+        ::-webkit-scrollbar-thumb { background: #C9BFA0; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ADA07A; }
+
+        .stamp-card {
+            background: #FBF9F1;
+            border: 1.5px solid #E4DDC6;
+            box-shadow: 0 1px 0 rgba(15,46,29,0.03), 0 8px 24px -12px rgba(15,46,29,0.12);
+        }
+        .paper-texture {
+            background-image: radial-gradient(circle at 1px 1px, rgba(15,46,29,0.05) 1px, transparent 0);
+            background-size: 22px 22px;
+        }
+        .tab-underline { position: relative; }
+        .tab-underline.active::after {
+            content: ''; position: absolute; left: 8px; right: 8px; bottom: -1px; height: 2px;
+            background: #1B7A43; border-radius: 2px;
+        }
+        .clause-quote { font-family: 'IBM Plex Mono', monospace; }
+        .fade-up { animation: fadeUp .5s ease both; }
+        @keyframes fadeUp { from { opacity:0; transform: translateY(8px);} to {opacity:1; transform:none;} }
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+        }
+        .seal { background: conic-gradient(from 180deg, #1B7A43, #166636, #1B7A43); }
+        :focus-visible { outline: 2px solid #1B7A43; outline-offset: 2px; }
+
+        /* Dấu triện / con dấu mực đỏ nhẹ dùng cho các chi tiết "cam kết" — gợi nhắc con dấu công chứng */
+        .wax-ring { border: 2px dashed rgba(27,122,67,0.35); }
+
+        /* Đường kẻ đục lỗ kiểu biên lai giữa các card cam kết bảo mật */
+        .ticket-notch::before, .ticket-notch::after {
+            content: ''; position: absolute; width: 16px; height: 16px; background: #EDE7D9;
+            border-radius: 999px; top: 50%; transform: translateY(-50%);
+        }
+        .ticket-notch::before { left: -8px; }
+        .ticket-notch::after { right: -8px; }
+    </style>
+</head>
+<body class="h-full bg-paper text-ink font-sans antialiased">
+
+    <!-- ============ HEADER ============ -->
+    <header class="border-b border-sand bg-paper/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <button onclick="switchTab('home-tab')" class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-full seal flex items-center justify-center shadow-sm">
+                    <i class="fa-solid fa-shield-halved text-white text-sm"></i>
+                </div>
+                <span class="font-display font-semibold text-lg tracking-tight text-ink">RentGuard <span class="text-brand-500 italic">AI</span></span>
+            </button>
+
+            <nav class="hidden lg:flex items-center gap-1">
+                <button onclick="switchTab('home-tab')" id="nav-home-tab" class="nav-btn tab-underline px-3.5 py-2 text-sm font-medium text-ink2 hover:text-ink transition-colors">Giới thiệu</button>
+                <button onclick="switchTab('demo-tab')" id="nav-demo-tab" class="nav-btn tab-underline px-3.5 py-2 text-sm font-medium text-ink2 hover:text-ink transition-colors">Soi hợp đồng</button>
+                <button onclick="switchTab('copilot-tab')" id="nav-copilot-tab" class="nav-btn tab-underline px-3.5 py-2 text-sm font-medium text-ink2 hover:text-ink transition-colors">Trợ lý đàm phán</button>
+                <button onclick="switchTab('landlord-tab')" id="nav-landlord-tab" class="nav-btn tab-underline px-3.5 py-2 text-sm font-medium text-ink2 hover:text-ink transition-colors">Dành cho chủ trọ</button>
+                <button onclick="switchTab('trust-tab')" id="nav-trust-tab" class="nav-btn tab-underline px-3.5 py-2 text-sm font-medium text-ink2 hover:text-ink transition-colors">Nâng cấp &amp; Bảo mật</button>
+            </nav>
+
+            <div class="flex items-center gap-2">
+                <button onclick="showToast('Đây là bản dựng prototype — chưa kết nối dữ liệu thật.')" class="hidden sm:flex items-center gap-2 text-xs bg-brand-50 hover:bg-brand-100 border border-brand-100 text-brand-700 px-3 py-2 rounded-full transition-colors">
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-pulse"></span> AI sẵn sàng
+                </button>
+                <button onclick="switchTab('demo-tab')" class="text-sm font-semibold bg-ink text-paper px-4 py-2 rounded-full hover:bg-brand-700 transition-colors">
+                    Thẩm định ngay
+                </button>
+                <button onclick="toggleMobileNav()" class="lg:hidden w-9 h-9 flex items-center justify-center rounded-full hover:bg-sand text-ink" aria-label="Mở menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile nav -->
+        <div id="mobile-nav" class="hidden lg:hidden border-t border-sand bg-paper px-4 py-3 space-y-1">
+            <button onclick="switchTab('home-tab')" class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-sand">Giới thiệu</button>
+            <button onclick="switchTab('demo-tab')" class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-sand">Soi hợp đồng</button>
+            <button onclick="switchTab('copilot-tab')" class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-sand">Trợ lý đàm phán</button>
+            <button onclick="switchTab('landlord-tab')" class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-sand">Dành cho chủ trọ</button>
+            <button onclick="switchTab('trust-tab')" class="block w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-sand">Nâng cấp &amp; Bảo mật</button>
+        </div>
+    </header>
+
+    <div id="toast-container" class="fixed bottom-5 right-5 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <main class="flex-1">
+
+    <!-- ======================================================= -->
+    <!-- TAB 0: TRANG CHỦ / LANDING -->
+    <!-- ======================================================= -->
+    <div id="home-tab" class="tab-content">
+
+        <!-- HERO -->
+        <section class="relative overflow-hidden border-b border-sand">
+            <div class="absolute inset-0 paper-texture opacity-40 pointer-events-none"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-20 relative grid lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-clay-100 text-clay-500 text-xs font-semibold mb-5 border border-clay-400/20">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Tây Ninh, 5/2026: một đối tượng lừa 55 nạn nhân 670 triệu tiền cọc
+                    </div>
+                    <h1 class="font-display text-4xl sm:text-5xl xl:text-6xl font-semibold leading-[1.08] text-ink mb-6 text-balance">
+                        Đọc kỹ hợp đồng trọ<br class="hidden sm:block"> <span class="italic text-brand-600">trước</span> khi mất tiền cọc.
+                    </h1>
+                    <p class="text-ink2 text-base sm:text-lg leading-relaxed mb-8 max-w-xl">
+                        RentGuard AI chụp ảnh hoặc đọc file hợp đồng thuê trọ của bạn, đối chiếu với Bộ luật Dân sự 2015, Luật Nhà ở và cơ sở dữ liệu án lệ thực tế — chỉ ra chính xác điều khoản nào đang gài bẫy, trong chưa đầy một phút.
+                    </p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <button onclick="switchTab('demo-tab')" class="inline-flex items-center gap-2 bg-ink text-paper font-semibold text-sm px-6 py-3.5 rounded-full hover:bg-brand-700 transition-colors shadow-lg shadow-ink/10">
+                            <i class="fa-solid fa-file-shield"></i> Thẩm định hợp đồng miễn phí
+                        </button>
+                        <button onclick="switchTab('landlord-tab')" class="inline-flex items-center gap-2 bg-transparent text-ink font-semibold text-sm px-6 py-3.5 rounded-full border border-ink/15 hover:border-ink/40 transition-colors">
+                            Tôi là chủ trọ <i class="fa-solid fa-arrow-right text-xs"></i>
+                        </button>
+                    </div>
+                    <button onclick="switchTab('trust-tab')" class="flex items-center gap-1.5 text-xs text-ink2/70 mt-4 hover:text-brand-600 transition-colors">
+                        <i class="fa-solid fa-lock"></i> Không lưu file gốc trên máy chủ trừ khi bạn chủ động đồng ý — xem cam kết bảo mật
+                    </button>
+                </div>
+
+                <!-- Mini visual: stamp card preview -->
+                <div class="relative">
+                    <div class="stamp-card rounded-3xl p-6 rotate-1 relative">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-xs font-semibold text-ink2 uppercase tracking-wider">Chỉ số minh bạch</span>
+                            <span class="text-[10px] font-mono text-ink2/60">HĐ_Cầu_Giấy.pdf</span>
+                        </div>
+                        <div class="flex items-end gap-4 mb-4">
+                            <span class="font-display text-6xl font-semibold text-clay-500">42</span>
+                            <span class="text-xs text-ink2 pb-2">/ 100 điểm<br>Nguy cơ cao</span>
+                        </div>
+                        <div class="space-y-2.5">
+                            <div class="flex items-center gap-2.5 text-xs bg-clay-100/60 border border-clay-400/20 rounded-lg px-3 py-2 text-clay-500">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Điều 4.2 — bẫy tiền cọc
+                            </div>
+                            <div class="flex items-center gap-2.5 text-xs bg-gold-100/60 border border-gold-400/20 rounded-lg px-3 py-2 text-gold-500">
+                                <i class="fa-solid fa-circle-exclamation"></i> Điều 6.1 — giá điện mập mờ
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute -bottom-5 -left-5 stamp-card rounded-2xl px-4 py-3 -rotate-2 hidden sm:block">
+                        <p class="text-[11px] text-ink2"><i class="fa-solid fa-bolt text-brand-500 mr-1"></i> Phân tích trong &lt; 3 giây/trang</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STATS BAR -->
+        <section class="border-b border-sand bg-sand/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div>
+                    <p class="font-display text-3xl font-semibold text-ink">~600.000</p>
+                    <p class="text-xs text-ink2 mt-1">Sinh viên đang thuê trọ tại TP.HCM</p>
+                </div>
+                <div>
+                    <p class="font-display text-3xl font-semibold text-ink">12.000</p>
+                    <p class="text-xs text-ink2 mt-1">Chỗ ở KTX ĐHQG — chưa tới 2% nhu cầu</p>
+                </div>
+                <div>
+                    <p class="font-display text-3xl font-semibold text-ink">80%</p>
+                    <p class="text-xs text-ink2 mt-1">Lao động ngoại tỉnh tại Hà Nội phải thuê trọ</p>
+                </div>
+                <div>
+                    <p class="font-display text-3xl font-semibold text-ink">&lt; 3s</p>
+                    <p class="text-xs text-ink2 mt-1">Thời gian phân tích mỗi trang hợp đồng</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- BỐI CẢNH -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 grid lg:grid-cols-5 gap-10">
+            <div class="lg:col-span-2">
+                <span class="text-xs font-semibold text-brand-600 uppercase tracking-wider">Vấn đề</span>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-ink mt-2 leading-snug">
+                    Bất cân xứng thông tin, không phải thiếu thiện chí
+                </h2>
+            </div>
+            <div class="lg:col-span-3 space-y-4 text-ink2 leading-relaxed text-sm sm:text-base">
+                <p>Người thuê trọ — nhất là sinh viên và người trẻ lần đầu tự lập — thường thiếu kinh nghiệm pháp lý để tự đánh giá một bản hợp đồng. Họ dễ chấp nhận các điều khoản về tiền cọc, thời hạn báo trước hay chi phí phát sinh mà không nhận ra mình đang ở thế bất lợi, cho tới khi tranh chấp xảy ra.</p>
+                <p>Các nền tảng legal-tech hiện có gần như chỉ phục vụ doanh nghiệp và hợp đồng thương mại giá trị lớn — bỏ ngỏ hoàn toàn mảng hợp đồng dân sự nhỏ lẻ nhưng cực kỳ phổ biến này. RentGuard AI sinh ra để lấp đúng khoảng trống đó, cho cả người thuê lẫn người cho thuê.</p>
+            </div>
+        </section>
+
+        <!-- QUY TRÌNH -->
+        <section class="border-y border-sand bg-sand/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+                <span class="text-xs font-semibold text-brand-600 uppercase tracking-wider">Cách hoạt động</span>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-ink mt-2 mb-10">Từ ảnh chụp đến báo cáo rủi ro</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="stamp-card rounded-2xl p-5">
+                        <i class="fa-solid fa-camera text-brand-500 mb-3 text-lg"></i>
+                        <p class="text-sm font-semibold text-ink mb-1">1. Tải hợp đồng lên</p>
+                        <p class="text-xs text-ink2 leading-relaxed">Ảnh chụp, PDF hoặc file Word — kể cả ảnh hơi mờ, nghiêng.</p>
+                    </div>
+                    <div class="stamp-card rounded-2xl p-5">
+                        <i class="fa-solid fa-text-height text-brand-500 mb-3 text-lg"></i>
+                        <p class="text-sm font-semibold text-ink mb-1">2. OCR &amp; chuẩn hoá</p>
+                        <p class="text-xs text-ink2 leading-relaxed">Đọc chữ tiếng Việt bằng thư viện OCR mã nguồn mở, độ chính xác mục tiêu ≥95%.</p>
+                    </div>
+                    <div class="stamp-card rounded-2xl p-5">
+                        <i class="fa-solid fa-scale-balanced text-brand-500 mb-3 text-lg"></i>
+                        <p class="text-sm font-semibold text-ink mb-1">3. Đối chiếu pháp lý</p>
+                        <p class="text-xs text-ink2 leading-relaxed">RAG truy vấn Bộ luật Dân sự, Luật Nhà ở &amp; cơ sở dữ liệu case study.</p>
+                    </div>
+                    <div class="stamp-card rounded-2xl p-5">
+                        <i class="fa-solid fa-file-circle-check text-brand-500 mb-3 text-lg"></i>
+                        <p class="text-sm font-semibold text-ink mb-1">4. Nhận báo cáo</p>
+                        <p class="text-xs text-ink2 leading-relaxed">Điểm minh bạch, điều khoản cần lưu ý, gợi ý đàm phán.</p>
+                    </div>
+                </div>
+                <p class="text-[11px] text-ink2/60 mt-6 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info"></i> File gốc chỉ tồn tại trong bộ nhớ tạm trong lúc xử lý — xem chi tiết ở mục Bảo mật.
+                </p>
+            </div>
+        </section>
+
+        <!-- TÁC ĐỘNG 3 NHÓM -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+            <span class="text-xs font-semibold text-brand-600 uppercase tracking-wider">Tác động</span>
+            <h2 class="font-display text-2xl sm:text-3xl font-semibold text-ink mt-2 mb-10">Ai được lợi từ RentGuard AI?</h2>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="stamp-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mb-4"><i class="fa-solid fa-user-graduate text-brand-600"></i></div>
+                    <h3 class="font-semibold text-ink mb-2">Người thuê trọ</h3>
+                    <p class="text-xs text-ink2 leading-relaxed">Hiểu rõ điều khoản trước khi ký, biết chính xác cần hỏi hay thương lượng điều gì, chủ động hơn với ngân sách cá nhân.</p>
+                </div>
+                <div class="stamp-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mb-4"><i class="fa-solid fa-house-user text-brand-600"></i></div>
+                    <h3 class="font-semibold text-ink mb-2">Chủ nhà</h3>
+                    <p class="text-xs text-ink2 leading-relaxed">Hợp đồng rõ ràng, nhất quán hơn — giảm tranh chấp do hai bên hiểu khác nhau về cùng một điều khoản.</p>
+                </div>
+                <div class="stamp-card rounded-2xl p-6">
+                    <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center mb-4"><i class="fa-solid fa-people-group text-brand-600"></i></div>
+                    <h3 class="font-semibold text-ink mb-2">Xã hội</h3>
+                    <p class="text-xs text-ink2 leading-relaxed">Giảm bất cân xứng thông tin, hình thành thói quen "kiểm tra trước khi ký" thay vì xử lý khi đã tranh chấp.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- CAM KẾT BẢO MẬT (rút gọn, dẫn sang tab Trust) -->
+        <section class="border-t border-sand bg-ink">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                    <div class="max-w-xl">
+                        <span class="text-xs font-semibold text-brand-300 uppercase tracking-wider">Cam kết dữ liệu</span>
+                        <h2 class="font-display text-2xl sm:text-3xl font-semibold text-paper mt-2 mb-3">Hợp đồng của bạn không ở lại</h2>
+                        <p class="text-sm text-paper/60 leading-relaxed">Mã hoá TLS 1.3 khi truyền, AES-256 khi lưu tạm, và xoá tức thì (Zero-Data Retention) ngay sau khi trả kết quả — trừ khi bạn chủ động đồng ý đóng góp dữ liệu đã ẩn danh cho nghiên cứu.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-3 shrink-0">
+                        <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-paper/80"><i class="fa-solid fa-lock text-brand-300"></i> TLS 1.3 + AES-256</div>
+                        <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-paper/80"><i class="fa-solid fa-trash-can text-brand-300"></i> Xoá tức thì sau xử lý</div>
+                        <div class="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2.5 text-xs text-paper/80"><i class="fa-solid fa-user-shield text-brand-300"></i> Ẩn danh theo NĐ 13/2023</div>
+                    </div>
+                </div>
+                <button onclick="switchTab('trust-tab')" class="mt-6 text-xs font-semibold text-brand-300 hover:text-brand-200 flex items-center gap-1.5">
+                    Đọc toàn bộ cam kết bảo mật &amp; miễn trừ trách nhiệm <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- CTA cuối -->
+        <section class="bg-brand-900">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div>
+                    <h2 class="font-display text-2xl font-semibold text-paper mb-1">Sẵn sàng soi hợp đồng của bạn?</h2>
+                    <p class="text-sm text-paper/60">Miễn phí 1 lượt thẩm định mỗi ngày. Không cần đăng ký.</p>
+                </div>
+                <button onclick="switchTab('demo-tab')" class="shrink-0 inline-flex items-center gap-2 bg-paper text-ink font-semibold text-sm px-6 py-3.5 rounded-full hover:bg-brand-100 transition-colors">
+                    Bắt đầu ngay <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- TAB 1: SOI HỢP ĐỒNG AI -->
+    <!-- ======================================================= -->
+    <div id="demo-tab" class="tab-content hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <div class="stamp-card rounded-3xl p-6 sm:p-8">
+            <div class="max-w-3xl mb-6">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold mb-3 border border-brand-100">
+                    <i class="fa-solid fa-bolt"></i> RAG hai lớp · Đối chiếu pháp lý tự động
+                </div>
+                <h1 class="font-display text-2xl sm:text-3xl font-semibold text-ink leading-tight mb-3">
+                    Đánh giá hợp đồng thuê trọ trong 30 giây
+                </h1>
+                <p class="text-ink2 text-sm sm:text-base leading-relaxed">
+                    Đừng để mất tiền cọc vô lý hay dính bẫy phí ẩn. AI quét văn bản hợp đồng, đối chiếu Bộ luật Dân sự 2015 và cơ sở dữ liệu án lệ thực tế để bảo vệ bạn.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="border-2 border-dashed border-ink/15 hover:border-brand-500 bg-paper hover:bg-brand-50/40 rounded-2xl p-6 transition-all flex flex-col items-center justify-center text-center cursor-pointer group" onclick="triggerFileUpload()">
+                    <input type="file" id="file-input" class="hidden" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" onchange="handleFileSelect(event)">
+                    <div class="w-12 h-12 rounded-full bg-sand group-hover:bg-brand-100 text-ink2 group-hover:text-brand-600 flex items-center justify-center mb-3 transition-colors">
+                        <i class="fa-solid fa-cloud-arrow-up text-xl"></i>
+                    </div>
+                    <p class="text-sm font-semibold text-ink mb-1">Tải lên hợp đồng (ảnh chụp / PDF)</p>
+                    <p class="text-xs text-ink2">Hỗ trợ OCR đọc ảnh chụp tay hoặc mờ</p>
+                </div>
+
+                <div class="bg-paper border border-sand rounded-2xl p-5 flex flex-col justify-between">
+                    <div>
+                        <span class="text-xs font-semibold text-ink2 uppercase tracking-wider block mb-2">Hoặc thử ngay mẫu hợp đồng có sẵn</span>
+                        <div class="space-y-2">
+                            <button onclick="loadSampleContract('trap')" class="w-full text-left px-3 py-2.5 rounded-xl bg-white hover:bg-clay-100/40 border border-sand hover:border-clay-400/40 text-xs flex items-center justify-between transition-all">
+                                <span class="font-medium text-clay-500 flex items-center gap-2">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Hợp đồng trọ Cầu Giấy (nhiều bẫy)
+                                </span>
+                                <span class="text-[10px] bg-clay-100 text-clay-500 px-2 py-0.5 rounded-full font-bold">42 điểm</span>
+                            </button>
+                            <button onclick="loadSampleContract('safe')" class="w-full text-left px-3 py-2.5 rounded-xl bg-white hover:bg-brand-50 border border-sand hover:border-brand-300 text-xs flex items-center justify-between transition-all">
+                                <span class="font-medium text-brand-600 flex items-center gap-2">
+                                    <i class="fa-solid fa-circle-check"></i> Hợp đồng căn hộ mini Bình Thạnh
+                                </span>
+                                <span class="text-[10px] bg-brand-100 text-brand-600 px-2 py-0.5 rounded-full font-bold">88 điểm</span>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-[11px] text-ink2/70 mt-3"><i class="fa-solid fa-lock mr-1"></i> Bản chụp hợp đồng được mã hoá và tự động xoá sau phân tích.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading -->
+        <div id="ai-loading" class="hidden stamp-card rounded-3xl p-8 text-center space-y-4">
+            <div class="relative w-16 h-16 mx-auto">
+                <div class="absolute top-0 left-0 w-full h-full border-4 border-brand-100 border-t-brand-500 rounded-full animate-spin"></div>
+                <i class="fa-solid fa-microchip absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-brand-600 text-xl"></i>
+            </div>
+            <div>
+                <h3 class="text-lg font-bold text-ink" id="loading-step-title">Đang trích xuất OCR dữ liệu...</h3>
+                <p class="text-xs text-ink2 mt-1" id="loading-step-desc">Nhận diện điều khoản, chữ ký và con số trong văn bản chụp</p>
+            </div>
+            <div class="max-w-md mx-auto grid grid-cols-3 gap-2 pt-2">
+                <div class="h-1.5 rounded-full bg-brand-500 animate-pulse"></div>
+                <div class="h-1.5 rounded-full bg-sand" id="step-bar-2"></div>
+                <div class="h-1.5 rounded-full bg-sand" id="step-bar-3"></div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="analysis-results" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="space-y-6">
+                <div class="stamp-card rounded-3xl p-6 text-center relative overflow-hidden">
+                    <span class="text-xs font-semibold text-ink2 uppercase tracking-wider block mb-2">Chỉ số minh bạch hợp đồng</span>
+                    <div class="relative w-36 h-36 mx-auto flex items-center justify-center my-4">
+                        <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                            <path class="text-sand" stroke-width="3.5" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                            <path id="score-circle" class="text-clay-400 transition-all duration-1000" stroke-dasharray="42, 100" stroke-width="3.5" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span class="font-display text-4xl font-semibold text-ink" id="score-text">42</span>
+                            <span class="text-[10px] font-bold text-ink2 uppercase">/ 100 điểm</span>
+                        </div>
+                    </div>
+                    <div id="score-badge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-clay-100 text-clay-500 border border-clay-400/20 mb-3">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i> Nguy cơ cao — nhiều bẫy pháp lý
+                    </div>
+                    <p class="text-xs text-ink2 leading-relaxed" id="score-summary">
+                        Hợp đồng chứa 3 điều khoản bất lợi nghiêm trọng về tiền cọc và phạt huỷ hợp đồng trái quy định Bộ luật Dân sự.
+                    </p>
+                </div>
+
+
+
+                <!-- Upsell PDF report -->
+                <div class="rounded-3xl p-5 bg-gold-100/50 border border-gold-400/30">
+                    <p class="text-xs font-bold text-ink flex items-center gap-2 mb-1.5"><i class="fa-solid fa-file-pdf text-gold-500"></i> Xuất báo cáo PDF chi tiết</p>
+                    <p class="text-[11px] text-ink2 leading-relaxed mb-3">Gói Premium (80.000đ/tháng) mở khoá báo cáo đầy đủ kèm trích dẫn luật, để in ra hoặc gửi kèm khi thương lượng.</p>
+                    <button onclick="switchTab('trust-tab')" class="text-xs font-semibold text-gold-500 hover:text-gold-500/80">Xem gói Premium →</button>
+                </div>
+
+                <!-- Disclaimer nhỏ luôn hiện cạnh kết quả phân tích -->
+                <div class="rounded-2xl p-4 bg-sand/50 border border-sand flex items-start gap-2.5">
+                    <i class="fa-solid fa-circle-info text-ink2/60 mt-0.5 text-xs"></i>
+                    <p class="text-[11px] text-ink2/80 leading-relaxed">Đây là công cụ tham khảo, không thay thế tư vấn pháp lý chính thức từ luật sư hoặc cơ quan Nhà nước có thẩm quyền. <button onclick="switchTab('trust-tab')" class="underline hover:text-ink">Đọc đầy đủ</button></p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-base font-bold text-ink flex items-center gap-2">
+                        <i class="fa-solid fa-magnifying-glass-chart text-brand-600"></i> Chi tiết các điều khoản cần lưu ý
+                    </h2>
+                    <span class="text-xs text-ink2" id="detected-count">Phát hiện 3 cảnh báo</span>
+                </div>
+
+                <div class="space-y-4" id="clauses-container">
+                    <!-- Clause 1 -->
+                    <div class="stamp-card rounded-3xl p-5 border-clay-400/30 space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-clay-100 text-clay-500 border border-clay-400/20">
+                                <i class="fa-solid fa-triangle-exclamation mr-1"></i> Bẫy tiền cọc — cảnh báo đỏ
+                            </span>
+                            <span class="text-xs text-ink2">Điều 4.2 trong hợp đồng</span>
+                        </div>
+                        <div class="clause-quote bg-sand/50 p-3 rounded-xl border border-sand text-xs text-ink2">
+                            "Trường hợp Bên B (Sinh viên) đơn phương chấm dứt hợp đồng trước hạn vì bất kỳ lý do gì sẽ mất toàn bộ tiền cọc 5.000.000đ và phải bồi thường thêm 2 tháng tiền nhà."
+                        </div>
+                        <div class="text-xs space-y-1.5 text-ink2">
+                            <p class="font-semibold text-clay-500 flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced"></i> Nhận định AI &amp; đối chiếu luật</p>
+                            <p class="leading-relaxed">Điều khoản bồi thường thêm 2 tháng tiền nhà ngoài việc mất cọc là <strong class="text-clay-500">lợi dụng vị thế cửa trên</strong>. Theo <span class="text-brand-600 underline">Điều 328 Bộ luật Dân sự 2015</span>, mức phạt cọc phải dựa trên thoả thuận bình đẳng, phạt quá mức là vô hiệu.</p>
+                        </div>
+                        <div class="pt-2 border-t border-sand flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-[11px] text-ink2">Rủi ro: mất tiền cọc + nợ chi phí phạt đền</span>
+                            <button onclick="openCopilotForClause('deposit')" class="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+                                Sửa điều khoản này <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Clause 2 -->
+                    <div class="stamp-card rounded-3xl p-5 border-gold-400/30 space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-gold-100 text-gold-500 border border-gold-400/20">
+                                <i class="fa-solid fa-circle-exclamation mr-1"></i> Tăng giá điện nước mập mờ — cảnh báo vàng
+                            </span>
+                            <span class="text-xs text-ink2">Điều 6.1 trong hợp đồng</span>
+                        </div>
+                        <div class="clause-quote bg-sand/50 p-3 rounded-xl border border-sand text-xs text-ink2">
+                            "Giá điện 4.500đ/kWh, giá nước 100.000đ/người. Chủ nhà có quyền điều chỉnh giá dịch vụ theo biến động thị trường mà không cần báo trước."
+                        </div>
+                        <div class="text-xs space-y-1.5 text-ink2">
+                            <p class="font-semibold text-gold-500 flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced"></i> Nhận định AI &amp; đối chiếu luật</p>
+                            <p class="leading-relaxed">Giá điện 4.500đ/kWh cao hơn khung giá quy định của Nhà nước cho sinh viên thuê nhà (<span class="text-brand-600 underline">Quyết định 2253/QĐ-BCT</span>). Quyền tự ý tăng giá không báo trước vi phạm tính minh bạch hợp đồng.</p>
+                        </div>
+                        <div class="pt-2 border-t border-sand flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-[11px] text-ink2">Rủi ro: bị tăng giá sinh hoạt vô lý hàng tháng</span>
+                            <button onclick="openCopilotForClause('utility')" class="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+                                Sửa điều khoản này <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Clause 3 -->
+                    <div class="stamp-card rounded-3xl p-5 space-y-3">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold bg-sand text-ink2 border border-sand">
+                                <i class="fa-solid fa-circle-info mr-1"></i> Nghĩa vụ sửa chữa thiết bị
+                            </span>
+                            <span class="text-xs text-ink2">Điều 8.3 trong hợp đồng</span>
+                        </div>
+                        <div class="clause-quote bg-sand/50 p-3 rounded-xl border border-sand text-xs text-ink2">
+                            "Mọi hư hỏng về máy lạnh, bình nóng lạnh trong quá trình ở, Bên B tự chịu 100% chi phí sửa chữa."
+                        </div>
+                        <p class="text-xs text-ink2 leading-relaxed">Cần bổ sung quy định rõ: nếu hư hỏng do hao mòn tự nhiên (máy đã dùng trên 5 năm), chủ nhà phải có trách nhiệm bảo trì theo Luật Nhà ở.</p>
+                        <div class="pt-2 border-t border-sand flex items-center justify-between flex-wrap gap-2">
+                            <span class="text-[11px] text-ink2">Rủi ro: gánh chi phí sửa chữa không thuộc trách nhiệm của mình</span>
+                            <button onclick="openCopilotForClause('repair')" class="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+                                Sửa điều khoản này <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- TAB 2: TRỢ LÝ ĐÀM PHÁN -->
+    <!-- ======================================================= -->
+    <div id="copilot-tab" class="tab-content hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        <div class="stamp-card rounded-3xl p-6">
+            <div class="max-w-2xl mb-6">
+                <h2 class="font-display text-xl sm:text-2xl font-semibold text-ink flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-brand-600"></i> Trợ lý sinh kịch bản đàm phán
+                </h2>
+                <p class="text-xs sm:text-sm text-ink2 mt-1.5 leading-relaxed">
+                    Chuyển các phát hiện rủi ro từ AI thành tin nhắn Zalo lịch sự hoặc phụ lục điều khoản thay thế, để chủ nhà vui vẻ ký kết.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-ink mb-2" for="copilot-issue-select">1. Chọn vấn đề cần đàm phán</label>
+                        <select id="copilot-issue-select" class="w-full bg-paper border border-sand rounded-xl p-3 text-xs text-ink focus:border-brand-500 focus:outline-none">
+                            <option value="deposit">Phạt mất cọc &amp; bồi thường 2 tháng tiền nhà quá nặng</option>
+                            <option value="utility">Giá điện 4.500đ/kWh &amp; tự ý tăng giá không báo trước</option>
+                            <option value="repair">Chi phí sửa chữa máy lạnh / bình nóng lạnh hư hỏng</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <span class="block text-xs font-semibold text-ink mb-2">2. Chọn giọng văn</span>
+                        <div class="grid grid-cols-1 gap-2">
+                            <label class="flex items-center gap-3 p-3 bg-paper border border-sand rounded-xl cursor-pointer hover:border-brand-400">
+                                <input type="radio" name="tone" value="soft" checked class="text-brand-500 focus:ring-0">
+                                <div>
+                                    <div class="text-xs font-semibold text-ink">Mềm mỏng, khéo léo</div>
+                                    <div class="text-[10px] text-ink2">Dùng gửi Zalo/SMS cho chủ nhà dễ tính</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-paper border border-sand rounded-xl cursor-pointer hover:border-brand-400">
+                                <input type="radio" name="tone" value="legal" class="text-brand-500 focus:ring-0">
+                                <div>
+                                    <div class="text-xs font-semibold text-ink">Chuẩn pháp lý &amp; căn cứ luật</div>
+                                    <div class="text-[10px] text-ink2">Trích dẫn Luật Dân sự &amp; Nghị định</div>
+                                </div>
+                            </label>
+                            <label class="flex items-center gap-3 p-3 bg-paper border border-sand rounded-xl cursor-pointer hover:border-brand-400">
+                                <input type="radio" name="tone" value="appendix" class="text-brand-500 focus:ring-0">
+                                <div>
+                                    <div class="text-xs font-semibold text-ink">Soạn điều khoản sửa đổi</div>
+                                    <div class="text-[10px] text-ink2">In ra giấy để ký đính kèm hợp đồng</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="generateNegotiationScript()" class="w-full py-3 bg-ink hover:bg-brand-700 text-paper font-bold text-xs rounded-xl transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate"></i> Tạo tin nhắn đàm phán
+                    </button>
+
+                    <div class="rounded-xl p-3.5 bg-gold-100/40 border border-gold-400/25 flex items-start gap-2">
+                        <i class="fa-solid fa-lock text-gold-500 text-xs mt-0.5"></i>
+                        <p class="text-[11px] text-ink2 leading-relaxed">Mẫu tin nhắn đàm phán <strong>chuyên sâu &amp; tuỳ chỉnh</strong> (nêu rõ số tiền, ngày tháng cụ thể) là tính năng Premium. Bản miễn phí cho ra mẫu tổng quát.</p>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-2 bg-paper rounded-2xl p-5 border border-sand flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <span class="text-xs font-bold text-ink flex items-center gap-2">
+                                <i class="fa-brands fa-whatsapp text-brand-500"></i> Nội dung gợi ý cho bạn
+                            </span>
+                            <span class="text-[10px] bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100" id="copilot-tone-tag">Giọng văn mềm mỏng</span>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border border-sand text-xs text-ink leading-relaxed font-sans min-h-[180px] whitespace-pre-line" id="copilot-output">
+"Dạ cháu chào chú/cô ạ! Cháu đã đọc qua hợp đồng thuê phòng trọ. Cháu rất thích phòng mình và muốn gắn bó lâu dài.
+
+Tuy nhiên ở Điều 4.2 về việc phạt tiền cọc và bồi thường 2 tháng tiền nhà nếu chuyển đi trước hạn, cháu thấy hơi nặng cho sinh viên như cháu. Nếu chẳng may trường có đợt thực tập đột xuất hoặc đổi cơ sở học thì cháu khó thu xếp.
+
+Chú/cô có thể xem xét điều chỉnh thành: 'Nếu báo trước 30 ngày thì sẽ hỗ trợ hoàn lại 50% cọc' được không ạ? Cháu cảm ơn chú/cô nhiều ạ!"
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between mt-4 pt-3 border-t border-sand flex-wrap gap-2">
+                        <span class="text-[11px] text-ink2"><i class="fa-solid fa-lightbulb mr-1 text-gold-500"></i> Mẹo: nên nhắn tin Zalo trước khi đến ký hợp đồng trực tiếp</span>
+                        <button onclick="copyNegotiationText()" class="px-4 py-2 bg-sand hover:bg-ink hover:text-paper text-ink font-semibold text-xs rounded-lg transition-colors flex items-center gap-2">
+                            <i class="fa-solid fa-copy"></i> Sao chép tin nhắn
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- TAB 3: DÀNH CHO CHỦ TRỌ (B2B) -->
+    <!-- ======================================================= -->
+    <div id="landlord-tab" class="tab-content hidden max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <div class="stamp-card rounded-3xl p-6 sm:p-8">
+            <div class="max-w-2xl">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-50 text-brand-600 text-xs font-semibold mb-3 border border-brand-100">
+                    <i class="fa-solid fa-building-shield"></i> Dành cho chủ trọ &amp; đơn vị vận hành
+                </div>
+                <h1 class="font-display text-2xl sm:text-3xl font-semibold text-ink leading-tight mb-3">
+                    Hợp đồng rõ ràng, ít tranh chấp hơn
+                </h1>
+                <p class="text-ink2 text-sm leading-relaxed">
+                    Rà soát hàng loạt hợp đồng thay vì kiểm tra thủ công từng bản. RentGuard AI chỉ ra điều khoản thiếu sót — thời hạn hoàn cọc, cách tính phí, điều kiện chấm dứt — để bạn chủ động điều chỉnh trước khi hai bên hiểu sai nhau.
+                </p>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-6">
+            <!-- Bulk review panel -->
+            <div class="lg:col-span-2 stamp-card rounded-3xl p-6">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <h2 class="text-sm font-bold text-ink flex items-center gap-2">
+                        <i class="fa-solid fa-layer-group text-brand-600"></i> Rà soát hàng loạt
+                    </h2>
+                    <button onclick="showToast('Prototype: tải nhiều file cùng lúc để rà soát đồng loạt.')" class="text-xs bg-ink text-paper px-3.5 py-2 rounded-full font-semibold hover:bg-brand-700 transition-colors">
+                        <i class="fa-solid fa-plus mr-1"></i> Tải nhiều hợp đồng
+                    </button>
+                </div>
+
+                <div class="space-y-2.5">
+                    <div class="flex items-center justify-between bg-paper border border-sand rounded-xl p-3.5">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <i class="fa-solid fa-file-lines text-ink2"></i>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-ink truncate">Phòng 101 — Nguyễn Văn A</p>
+                                <p class="text-[11px] text-ink2">Cập nhật hôm nay</p>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-bold bg-brand-100 text-brand-600 px-2.5 py-1 rounded-full shrink-0">91 điểm</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-paper border border-sand rounded-xl p-3.5">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <i class="fa-solid fa-file-lines text-ink2"></i>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-ink truncate">Phòng 203 — Trần Thị B</p>
+                                <p class="text-[11px] text-ink2">Cập nhật 2 ngày trước</p>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-bold bg-gold-100 text-gold-500 px-2.5 py-1 rounded-full shrink-0">67 điểm</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-paper border border-clay-400/30 rounded-xl p-3.5">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <i class="fa-solid fa-file-lines text-clay-500"></i>
+                            <div class="min-w-0">
+                                <p class="text-xs font-semibold text-ink truncate">Phòng 305 — Mẫu hợp đồng chung</p>
+                                <p class="text-[11px] text-ink2">Thiếu điều khoản hoàn cọc — cần sửa</p>
+                            </div>
+                        </div>
+                        <span class="text-[11px] font-bold bg-clay-100 text-clay-500 px-2.5 py-1 rounded-full shrink-0">38 điểm</span>
+                    </div>
+                </div>
+
+                <div class="mt-5 pt-5 border-t border-sand grid sm:grid-cols-3 gap-4 text-center">
+                    <div>
+                        <p class="font-display text-2xl font-semibold text-ink">12</p>
+                        <p class="text-[11px] text-ink2">Hợp đồng đã rà soát</p>
+                    </div>
+                    <div>
+                        <p class="font-display text-2xl font-semibold text-ink">3</p>
+                        <p class="text-[11px] text-ink2">Cần chỉnh sửa trước khi ký</p>
+                    </div>
+                    <div>
+                        <p class="font-display text-2xl font-semibold text-brand-600">82%</p>
+                        <p class="text-[11px] text-ink2">Điểm minh bạch trung bình</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tenant-Friendly badge -->
+            <div class="stamp-card rounded-3xl p-6 flex flex-col items-center text-center">
+                <div class="w-16 h-16 rounded-full seal flex items-center justify-center mb-4">
+                    <i class="fa-solid fa-award text-white text-xl"></i>
+                </div>
+                <h3 class="font-display text-lg font-semibold text-ink mb-2">Nhãn "Hợp đồng thân thiện"</h3>
+                <p class="text-xs text-ink2 leading-relaxed mb-4">
+                    Hợp đồng đạt từ 80 điểm trở lên được cấp nhãn <strong>Tenant-Friendly Lease</strong>, có thể gắn lên tin đăng cho thuê để tăng độ tin cậy với người thuê tiềm năng.
+                </p>
+                <div class="w-full bg-paper border border-sand rounded-xl p-3 text-left mb-4">
+                    <p class="text-[11px] font-mono text-ink2">API tích hợp cho sàn tin đăng</p>
+                    <p class="text-[11px] font-mono text-brand-600">GET /v1/certify/{contract_id}</p>
+                </div>
+                <button onclick="switchTab('trust-tab')" class="w-full py-2.5 bg-ink hover:bg-brand-700 text-paper font-semibold text-xs rounded-xl transition-colors">
+                    Xem gói B2B Partnership
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================================================= -->
+    <!-- TAB 4: BẢO MẬT & GIÁ -->
+    <!-- ======================================================= -->
+    <div id="trust-tab" class="tab-content hidden">
+
+        <!-- Pricing -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="text-center max-w-xl mx-auto mb-10">
+                <span class="text-xs font-semibold text-brand-600 uppercase tracking-wider">Bảng giá</span>
+                <h1 class="font-display text-2xl sm:text-3xl font-semibold text-ink mt-2">Miễn phí để bắt đầu, trả phí khi cần chuyên sâu</h1>
+            </div>
+            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <!-- Free -->
+                <div class="stamp-card rounded-3xl p-6 flex flex-col">
+                    <p class="text-sm font-semibold text-ink2 mb-1">Miễn phí</p>
+                    <p class="font-display text-3xl font-semibold text-ink mb-4">0đ</p>
+                    <ul class="text-xs text-ink2 space-y-2.5 mb-6 flex-1">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> 1 lượt thẩm định / ngày</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> Điểm minh bạch &amp; bản đồ nhiệt rủi ro</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> Giải thích cơ bản từng điều khoản</li>
+                        <li class="flex items-start gap-2 text-ink2/50"><i class="fa-solid fa-xmark mt-0.5"></i> Xuất báo cáo PDF chi tiết</li>
+                    </ul>
+                    <button onclick="switchTab('demo-tab')" class="w-full py-2.5 border border-ink/15 hover:border-ink/40 text-ink font-semibold text-xs rounded-xl transition-colors">Dùng miễn phí</button>
+                </div>
+                <!-- Premium -->
+                <div class="rounded-3xl p-6 flex flex-col bg-ink text-paper relative overflow-hidden ring-2 ring-brand-500">
+                    <span class="absolute top-4 right-4 text-[10px] font-bold bg-brand-500 text-white px-2.5 py-1 rounded-full">Phổ biến</span>
+                    <p class="text-sm font-semibold text-paper/70 mb-1">Premium</p>
+                    <p class="font-display text-3xl font-semibold mb-1">80.000đ<span class="text-sm font-sans font-normal text-paper/60">/tháng</span></p>
+                    <p class="text-[11px] text-paper/50 mb-4">hoặc 10.000đ / lượt lẻ</p>
+                    <ul class="text-xs text-paper/80 space-y-2.5 mb-6 flex-1">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-300 mt-0.5"></i> Không giới hạn lượt quét</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-300 mt-0.5"></i> Xuất báo cáo PDF chi tiết kèm trích luật</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-300 mt-0.5"></i> Mẫu tin nhắn đàm phán tuỳ chỉnh chuyên sâu</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-300 mt-0.5"></i> Không hiển thị quảng cáo</li>
+                    </ul>
+                    <button onclick="showToast('Prototype: luồng thanh toán sẽ được tích hợp ở bản MVP.')" class="w-full py-2.5 bg-paper text-ink font-semibold text-xs rounded-xl hover:bg-brand-100 transition-colors">Nâng cấp Premium</button>
+                </div>
+                <!-- B2B -->
+                <div class="stamp-card rounded-3xl p-6 flex flex-col">
+                    <p class="text-sm font-semibold text-ink2 mb-1">B2B Partnership</p>
+                    <p class="font-display text-3xl font-semibold text-ink mb-4">Theo thoả thuận</p>
+                    <ul class="text-xs text-ink2 space-y-2.5 mb-6 flex-1">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> API thẩm định &amp; rà soát hàng loạt</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> Nhãn "Hợp đồng thân thiện" cho tin đăng</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-brand-500 mt-0.5"></i> Dành cho sàn BĐS, ký túc xá tư nhân</li>
+                    </ul>
+                    <button onclick="switchTab('landlord-tab')" class="w-full py-2.5 border border-ink/15 hover:border-ink/40 text-ink font-semibold text-xs rounded-xl transition-colors">Xem chi tiết</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security -->
+        <section class="border-t border-sand bg-sand/40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+                <span class="text-xs font-semibold text-brand-600 uppercase tracking-wider">Bảo mật &amp; dữ liệu</span>
+                <h2 class="font-display text-2xl sm:text-3xl font-semibold text-ink mt-2 mb-2">Dữ liệu hợp đồng của bạn không ở lại</h2>
+                <p class="text-sm text-ink2 max-w-2xl mb-8">Cam kết Zero-Data Retention: hệ thống không lưu trữ bất kỳ bản sao hợp đồng gốc nào trên máy chủ sau khi trả kết quả phân tích.</p>
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div class="stamp-card rounded-2xl p-6">
+                        <i class="fa-solid fa-lock text-brand-600 mb-3 text-lg"></i>
+                        <h3 class="text-sm font-semibold text-ink mb-2">Mã hoá đầu cuối</h3>
+                        <p class="text-xs text-ink2 leading-relaxed">Mọi file được truyền qua HTTPS (TLS 1.3) và mã hoá tạm thời theo chuẩn AES-256.</p>
+                    </div>
+                    <div class="stamp-card rounded-2xl p-6">
+                        <i class="fa-solid fa-trash-can text-brand-600 mb-3 text-lg"></i>
+                        <h3 class="text-sm font-semibold text-ink mb-2">Xoá dữ liệu tức thì</h3>
+                        <p class="text-xs text-ink2 leading-relaxed">Ngay sau khi trích xuất văn bản và trả kết quả, file gốc và dữ liệu trung gian trong bộ nhớ tạm bị tiêu huỷ. Không lưu bản sao trên máy chủ trừ khi bạn chủ động đồng ý (opt-in) đóng góp cho nghiên cứu.</p>
+                    </div>
+                    <div class="stamp-card rounded-2xl p-6">
+                        <i class="fa-solid fa-user-shield text-brand-600 mb-3 text-lg"></i>
+                        <h3 class="text-sm font-semibold text-ink mb-2">Khử định danh</h3>
+                        <p class="text-xs text-ink2 leading-relaxed">Họ tên, CCCD, số điện thoại, địa chỉ, số tài khoản đều được ẩn danh hoá bằng thuật toán NER trước khi dùng cho nghiên cứu, tuân thủ Nghị định 13/2023/NĐ-CP.</p>
+                    </div>
+                </div>
+
+                <!-- Chi tiết khung pháp lý sử dụng dữ liệu -->
+                <div class="stamp-card rounded-3xl p-6 sm:p-8 mt-6">
+                    <h3 class="text-sm font-bold text-ink flex items-center gap-2 mb-4">
+                        <i class="fa-solid fa-clipboard-check text-brand-600"></i> Nguyên tắc sử dụng dữ liệu cho nghiên cứu
+                    </h3>
+                    <div class="grid sm:grid-cols-2 gap-4 text-xs text-ink2 leading-relaxed">
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-brand-500 mt-0.5"></i>
+                            <p><strong class="text-ink">Đồng ý chủ động (opt-in):</strong> chỉ đưa vào tập nghiên cứu khi người dùng đồng ý qua điều khoản sử dụng; từ chối không ảnh hưởng trải nghiệm.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-brand-500 mt-0.5"></i>
+                            <p><strong class="text-ink">Ẩn danh hoá 100%:</strong> loại bỏ họ tên, CCCD, SĐT, địa chỉ, số tài khoản trước khi đưa vào tập huấn luyện/đánh giá.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-brand-500 mt-0.5"></i>
+                            <p><strong class="text-ink">Tuân thủ bản quyền:</strong> không sao chép nguyên văn tài liệu bên thứ ba; kiến thức được diễn giải thành checklist nội bộ.</p>
+                        </div>
+                        <div class="flex items-start gap-2.5">
+                            <i class="fa-solid fa-check text-brand-500 mt-0.5"></i>
+                            <p><strong class="text-ink">Chỉ phục vụ nội bộ:</strong> dữ liệu ẩn danh không chia sẻ hay cung cấp cho bất kỳ bên thứ ba nào.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Disclaimer -->
+        <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+            <div class="stamp-card rounded-3xl p-6 sm:p-8 border-gold-400/30 bg-gold-100/20">
+                <h2 class="text-sm font-bold text-ink flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-circle-info text-gold-500"></i> Tuyên bố miễn trừ trách nhiệm
+                </h2>
+                <p class="text-xs sm:text-sm text-ink2 leading-relaxed">
+                    Ứng dụng là công cụ hỗ trợ công nghệ tự động nhằm mục đích tham khảo, giúp nâng cao nhận thức rủi ro cho người đi thuê nhà. Kết quả phân tích của ứng dụng không cấu thành văn bản tư vấn pháp lý chính thức và không thay thế cho ý kiến chuyên môn từ luật sư hoặc cơ quan Nhà nước có thẩm quyền.
+                </p>
+            </div>
+        </section>
+    </div>
+
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="border-t border-sand bg-sand/30 py-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-full seal flex items-center justify-center">
+                        <i class="fa-solid fa-shield-halved text-white text-xs"></i>
+                    </div>
+                    <span class="font-display font-semibold text-ink">RentGuard <span class="text-brand-500 italic">AI</span></span>
+                </div>
+                <p class="text-xs text-ink2 text-center">Dự án khởi nghiệp đổi mới sáng tạo — Attacker 2026</p>
+            </div>
+            <p class="text-[11px] text-ink2/60 text-center sm:text-left mt-4">Xây dựng trên kiến trúc RAG hai lớp &amp; OCR tiếng Việt. Prototype UX/UI — chưa kết nối dữ liệu thật.</p>
+        </div>
+    </footer>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const target = document.getElementById(tabId);
+            target.classList.remove('hidden');
+            target.classList.add('fade-up');
+            window.scrollTo({ top: 0, behavior: 'instant' });
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-ink');
+                btn.classList.add('text-ink2');
+            });
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            if (activeBtn) {
+                activeBtn.classList.add('active', 'text-ink');
+                activeBtn.classList.remove('text-ink2');
+            }
+            document.getElementById('mobile-nav').classList.add('hidden');
+        }
+
+        function toggleMobileNav() {
+            document.getElementById('mobile-nav').classList.toggle('hidden');
+        }
+
+        function triggerFileUpload() {
+            document.getElementById('file-input').click();
+        }
+
+                async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                await analyzeContractFile(file);
+            }
+        }
+
+        async function analyzeContractFile(file) {
+            const loadingBox = document.getElementById('ai-loading');
+            const resultsBox = document.getElementById('analysis-results');
+            const titleEl = document.getElementById('loading-step-title');
+            const descEl = document.getElementById('loading-step-desc');
+            const step2 = document.getElementById('step-bar-2');
+            const step3 = document.getElementById('step-bar-3');
+
+            // Hiển thị khung loading
+            resultsBox.classList.add('hidden');
+            loadingBox.classList.remove('hidden');
+            step2.className = 'h-1.5 rounded-full bg-sand';
+            step3.className = 'h-1.5 rounded-full bg-sand';
+
+            titleEl.textContent = `Đang tải file: ${file.name}`;
+            descEl.textContent = "Đang quét OCR số hoá văn bản và gửi tới Gemini AI...";
+
+            // Tạo FormData gửi tới Backend FastAPI
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                // Tùy chỉnh hiệu ứng bước 2
+                setTimeout(() => {
+                    step2.classList.remove('bg-sand');
+                    step2.classList.add('bg-brand-500', 'animate-pulse');
+                    titleEl.textContent = "Gemini AI đang phân tích pháp lý...";
+                    descEl.textContent = "Đối chiếu điều khoản với Luật Dân sự & phát hiện bẫy hợp đồng...";
+                }, 1000);
+
+                // Gọi API backend (tự động thử relative path /api/analyze-contract, rồi tới 127.0.0.1)
+                let response;
+                const apiHost = window.API_BASE_URL || "";
+                try {
+                    response = await fetch(apiHost + "/api/analyze-contract", {
+                        method: "POST",
+                        body: formData
+                    });
+                } catch (err) {
+                    response = await fetch("http://127.0.0.1:8000/api/analyze-contract", {
+                        method: "POST",
+                        body: formData
+                    });
+                }
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.error || `Lỗi máy chủ (${response.status})`);
+                }
+
+                const result = await response.json();
+
+                // Hiệu ứng hoàn tất bước 3
+                step3.classList.remove('bg-sand');
+                step3.classList.add('bg-brand-500');
+
+                // Render kết quả thực tế từ Gemini
+                renderGeminiResults(result);
+
+                loadingBox.classList.add('hidden');
+                resultsBox.classList.remove('hidden');
+                showToast(`Đã phân tích xong hợp đồng: ${file.name}`);
+
+            } catch (error) {
+                console.error("Lỗi phân tích:", error);
+                loadingBox.classList.add('hidden');
+                showToast("Không thể kết nối Backend/Gemini: " + error.message);
+            }
+        }
+
+        function renderGeminiResults(data) {
+            // 1. Render điểm số từ Gemini
+            const score = data.score || 50;
+            document.getElementById('score-text').textContent = score;
+            document.getElementById('score-circle').setAttribute('stroke-dasharray', `${score}, 100`);
+
+            if (score < 60) {
+                document.getElementById('score-circle').className = 'text-clay-400 transition-all duration-1000';
+                document.getElementById('score-badge').className = 'inline-block px-3 py-1 rounded-full text-xs font-bold bg-clay-100 text-clay-500 border border-clay-400/20 mb-3';
+                document.getElementById('score-badge').innerHTML = '<i class="fa-solid fa-triangle-exclamation mr-1"></i> Phát hiện rủi ro pháp lý';
+            } else {
+                document.getElementById('score-circle').className = 'text-brand-500 transition-all duration-1000';
+                document.getElementById('score-badge').className = 'inline-block px-3 py-1 rounded-full text-xs font-bold bg-brand-100 text-brand-600 border border-brand-300/40 mb-3';
+                document.getElementById('score-badge').innerHTML = '<i class="fa-solid fa-circle-check mr-1"></i> Hợp đồng an toàn';
+            }
+
+            // 2. Render tóm tắt tổng quan từ Gemini
+            document.getElementById('score-summary').textContent = data.summary || 'Đã hoàn thành phân tích hợp đồng.';
+
+            // 3. Render động toàn bộ chi tiết các điều khoản được AI phân tích
+            const container = document.getElementById('clauses-container');
+            if (container && data.clauses && Array.isArray(data.clauses)) {
+                document.getElementById('detected-count').textContent = `Phát hiện ${data.clauses.length} điều khoản cần lưu ý`;
+                container.innerHTML = ""; // Xóa dữ liệu mẫu mặc định
+
+                data.clauses.forEach((clause, index) => {
+                    const isHighRisk = clause.risk_level === 'high' || (clause.risk_level === undefined && index === 0);
+                    const isMediumRisk = clause.risk_level === 'medium' || (clause.risk_level === undefined && index === 1);
+
+                    let badgeStyle = "bg-sand text-ink2 border-sand";
+                    let icon = "fa-circle-info";
+                    let borderStyle = "border-sand";
+                    let titleColor = "text-ink2";
+
+                    if (isHighRisk) {
+                        badgeStyle = "bg-clay-100 text-clay-500 border-clay-400/20";
+                        icon = "fa-triangle-exclamation";
+                        borderStyle = "border-clay-400/30";
+                        titleColor = "text-clay-500";
+                    } else if (isMediumRisk) {
+                        badgeStyle = "bg-gold-100 text-gold-500 border-gold-400/20";
+                        icon = "fa-circle-exclamation";
+                        borderStyle = "border-gold-400/30";
+                        titleColor = "text-gold-500";
+                    }
+
+                    const card = document.createElement("div");
+                    card.className = `stamp-card rounded-3xl p-5 ${borderStyle} space-y-3 fade-up`;
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold ${badgeStyle}">
+                                <i class="fa-solid ${icon} mr-1"></i> ${clause.title || 'Điều khoản hợp đồng'}
+                            </span>
+                            <span class="text-xs text-ink2 font-medium">${clause.location || 'Vị trí trong hợp đồng'}</span>
+                        </div>
+                        <div class="clause-quote bg-sand/50 p-3 rounded-xl border border-sand text-xs text-ink2 leading-relaxed">
+                            "${clause.text || ''}"
+                        </div>
+                        <div class="text-xs space-y-1.5 text-ink2">
+                            <p class="font-semibold ${titleColor} flex items-center gap-1.5">
+                                <i class="fa-solid fa-scale-balanced"></i> Nhận định AI &amp; đối chiếu luật
+                            </p>
+                            <p class="leading-relaxed">${clause.analysis || ''}</p>
+                        </div>
+                        <div class="pt-2 border-t border-sand flex items-center justify-end">
+                            <button onclick="openCopilotWithClause('${encodeURIComponent(JSON.stringify(clause))}')" class="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-wand-magic-sparkles text-[11px]"></i> Đàm phán điều khoản này <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        function openCopilotWithClause(clauseJsonStr) {
+            try {
+                const clause = JSON.parse(decodeURIComponent(clauseJsonStr));
+                switchTab('copilot-tab');
+                const outputBox = document.getElementById('copilot-output');
+                if (outputBox) {
+                    outputBox.textContent = `[KỊCH BẢN ĐÀM PHÁN CHO: "${clause.title}"]\n\nNội dung trong hợp đồng: "${clause.text}"\n\nCăn cứ pháp lý & Nhận định AI: ${clause.analysis}\n\nĐề xuất tin nhắn đàm phán:\n"Dạ cháu chào chú/cô ạ! Về khoản ${clause.location} trong hợp đồng ('${clause.text}'), cháu thấy ${clause.analysis}. Chú/cô cân nhắc hỗ trợ điều chỉnh lại khoản này giúp cháu được không ạ?"`;
+                }
+                showToast(`Đã chuyển điều khoản "${clause.title}" sang Trợ lý đàm phán!`);
+            } catch (e) {
+                switchTab('copilot-tab');
+            }
+        }
+
+        function generateNegotiationScript() {
+            const issue = document.getElementById('copilot-issue-select').value;
+            const tone = document.querySelector('input[name="tone"]:checked').value;
+            const outputBox = document.getElementById('copilot-output');
+            const toneTag = document.getElementById('copilot-tone-tag');
+
+            let script = "";
+
+            if (tone === 'soft') {
+                toneTag.textContent = "Giọng văn mềm mỏng";
+                if (issue === 'deposit') {
+                    script = `"Dạ cháu chào chú/cô ạ! Cháu đã đọc qua bản hợp đồng. Cháu rất thích phòng và mong muốn ở lâu dài. Tuy nhiên ở khoản phạt tịch thu cọc + phạt 2 tháng tiền nhà nếu đổi kế hoạch đột xuất, cháu thấy hơi quá sức với sinh viên. Cô/chú có thể cân nhắc hạ xuống mức báo trước 30 ngày thì hoàn 50% cọc giúp cháu được không ạ?"`;
+                } else if (issue === 'utility') {
+                    script = `"Dạ chú/cô ơi, cháu thấy tiền điện ghi 4.500đ/kWh và có ghi quyền tăng giá tuỳ ý. Chú/cô có thể chốt cố định giá điện theo quy định hoặc báo trước 15 ngày nếu có thay đổi để cháu chủ động chi tiêu được không ạ?"`;
+                } else {
+                    script = `"Dạ chú/cô ơi, về phần máy lạnh hư hỏng, nếu do máy cũ sử dụng lâu năm tự hỏng hóc thì chú/cô hỗ trợ sửa giúp cháu nhé, còn nếu do cháu làm hỏng thì cháu xin tự chịu chi phí ạ!"`;
+                }
+            } else if (tone === 'legal') {
+                toneTag.textContent = "Chuẩn căn cứ pháp lý";
+                if (issue === 'deposit') {
+                    script = `"Kính gửi Chủ nhà, theo Điều 328 Bộ luật Dân sự 2015, chế tài phạt cọc cần đảm bảo tính tương quan bình đẳng. Việc áp dụng đồng thời phạt mất cọc và phạt thêm 2 tháng tiền nhà là không phù hợp với quy định pháp luật. Đề nghị sửa đổi thành điều khoản phạt tối đa bằng giá trị cọc khi vi phạm hợp đồng."`;
+                } else if (issue === 'utility') {
+                    script = `"Kính gửi Chủ nhà, theo Quyết định 2253/QĐ-BCT, giá bán lẻ điện cho người thuê nhà cần tuân thủ khung giá Nhà nước quy định. Việc tự ý điều chỉnh giá dịch vụ không báo trước vi phạm nguyên tắc công khai hợp đồng dân sự. Đề nghị bổ sung điều khoản báo trước bằng văn bản tối thiểu 15 ngày trước khi thay đổi giá."`;
+                } else {
+                    script = `"Kính gửi Chủ nhà, theo quy định Luật Nhà ở về trách nhiệm bảo trì tài sản cho thuê, hao mòn tự nhiên của thiết bị (trên 5 năm sử dụng) thuộc trách nhiệm của bên cho thuê. Đề nghị bổ sung điều khoản phân định rõ trường hợp hư hỏng do lỗi người thuê và hao mòn tự nhiên."`;
+                }
+            } else {
+                toneTag.textContent = "Mẫu phụ lục hợp đồng";
+                script = `PHỤ LỤC SỬA ĐỔI ĐIỀU KHOẢN HỢP ĐỒNG THUÊ TRỌ
+- Điều 4.2 được sửa đổi như sau: "Nếu Bên B chấm dứt hợp đồng trước hạn nhưng báo trước ít nhất 30 ngày, Bên A sẽ hoàn trả 50% tiền đặt cọc."
+- Điều 6.1 được sửa đổi như sau: "Mọi thay đổi về giá điện, nước phải được báo bằng văn bản trước ít nhất 15 ngày."
+- Điều 8.3 được sửa đổi như sau: "Hư hỏng do hao mòn tự nhiên (thiết bị sử dụng trên 5 năm) thuộc trách nhiệm bảo trì của Bên A. Hư hỏng do lỗi sử dụng của Bên B thì Bên B chịu chi phí sửa chữa."`;
+            }
+
+            outputBox.textContent = script;
+            showToast("Đã sinh kịch bản đàm phán mới!");
+        }
+
+        function copyNegotiationText() {
+            const text = document.getElementById('copilot-output').textContent;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Đã sao chép tin nhắn vào bộ nhớ tạm!");
+            } catch (err) {
+                showToast("Không thể sao chép tự động!");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'bg-ink text-paper text-xs px-4 py-3 rounded-xl shadow-xl flex items-center gap-2 transition-all transform translate-y-2 pointer-events-auto max-w-xs';
+            toast.innerHTML = `<i class="fa-solid fa-circle-info text-brand-300"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3200);
+        }
+
+        // init
+        switchTab('home-tab');
+    </script>
+</body>
+</html>
